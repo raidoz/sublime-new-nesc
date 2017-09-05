@@ -1,0 +1,288 @@
+%YAML 1.2
+---
+name: new-nesC
+file_extensions:
+  - nc
+scope: source.new-nesc
+variables:
+  identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+contexts:
+  main:
+    - include: preprocessor-global
+    - include: global
+    - include: comments
+    - include: operators
+    - include: modifiers
+    - include: variables
+    - include: constants
+    - include: keywords
+    - include: types
+    - include: strings
+    - include: numbers
+    # does not work with "call" inside another function call
+    - include: nesc-function-call
+    - include: interface-call
+    - include: param-interface-call
+    #- include: type-interface-call
+    #- include: block
+    #- include: scope:source.c#typedef
+    #- include: scope:source.c#case-default
+    #- include: scope:source.c#keywords-parens
+    #- include: scope:source.c#function-specifiers
+    #- include: scope:source.c#function-definition-body
+
+    #- match: '\b(abstract|as|async|atomic|call|command|components|configuration|event|implementation|includes|interface|generic|module|new|norace|post|provides|signal|task|uses|nx_struct)\b'
+    #  scope: keyword.control.new-nesc
+
+    #- match: '\b(result_t|error_t|nx_uint8_t|nx_uint16_t|nx_uint32_t|nx_int8_t|nx_int16_t|nx_int32_t|void)\b'
+    #  scope: support.type.stdint.new-nesc
+
+    #- match: '\b(uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t)\b'
+    #  scope: support.type.stdint.new-nesc
+
+    # Numbers
+    #- match: '\b(-)?[0-9.]+\b'
+    #  scope: constant.numeric.new-nesc
+
+  unique-types:
+    - match: \bmessage_t\b
+      scope: storage.type.new-nesc
+    - match: \bam_addr_t\b
+      scope: storage.type.new-nesc
+    - match: \bam_am_id_t\b
+      scope: storage.type.new-nesc
+    - match: \berror_t\b
+      scope: storage.type.new-nesc
+    - match: \b(nx_uint8_t|nx_uint16_t|nx_uint32_t|nx_int8_t|nx_int16_t|nx_int32_t)\b
+      scope: storage.type.new-nesc
+
+  unique-constants:
+    - match: \b(SUCCESS|FAIL|ESIZE|ECANCEL|EOFF|EBUSY|EINVAL|ERETRY|ERESERVE|EALREADY|ENOMEM|ENOACK|ELAST)\b
+      scope: constant.language.error_t.new-nesc
+
+  unique-keywords:
+    - match: \b(command|event|task|signal|call|post)\b
+      scope: keyword.control.new-nesc
+    - match: \b(provides|uses)\b
+      scope: keyword.control.new-nesc
+    - match: \b(interface)\b
+      scope: keyword.control.new-nesc
+    - match: \b(generic|configuration|module|implementation|components)\b
+      scope: keyword.control.new-nesc
+    - match: \b(atomic)\b
+      scope: keyword.control.new-nesc
+
+  unique-variables:
+    - match: \B@exactlyonce\(\)\B
+      scope: variable.function.exactlyonce.new-nesc
+    - match: \bnew\b
+      scope: variable.language.new.new-nesc
+
+  unique-modifiers:
+    - match: \b__attribute__
+      scope: storage.modifier.new-nesc
+
+  comments:
+    - include: scope:source.c#comments
+
+  operators:
+    - include: scope:source.c#operators
+
+  modifiers:
+    - include: unique-modifiers
+    - include: scope:source.c#modifiers
+
+  variables:
+    - include: unique-variables
+    - include: scope:source.c#variables
+
+  constants:
+    - include: unique-constants
+    - include: scope:source.c#constants
+
+  keywords:
+    - include: unique-keywords
+    - include: scope:source.c#keywords
+
+  types:
+    - include: unique-types
+    #- include: types-parens
+    - include: scope:source.c#types
+
+  strings:
+    - include: unique-strings
+    - include: scope:source.c#strings
+
+  numbers:
+    - include: unique-numbers
+    - include: scope:source.c#numbers
+
+  statements:
+    - include: preprocessor-statements
+    - include: label
+    - include: nesc-expressions
+
+  nesc-expressions:
+    - include: types
+    - include: constants
+    - include: keywords
+    - include: keywords-parens
+    - include: param-interface-call
+    - include: interface-call
+    - include: nesc-function-call
+    - include: scope:source.c#expressions
+
+  interface-call:
+    - match: (?={{identifier}}\s*\.{{identifier}}\s*\()
+      push:
+        - meta_content_scope: meta.interface-call.new-nesc
+        - include: c99
+        - match: '{{identifier}}'
+          scope: variable.function.c
+        - match: '\('
+          scope: meta.group.new-nesc punctuation.section.group.begin.new-nesc
+          set:
+            - meta_content_scope: meta.interface-call.new-nesc meta.group.new-nesc
+            - match : \)
+              scope: meta.interface-call.new-nesc meta.group.new-nesc punctuation.section.group.end.new-nesc
+              pop: true
+            - include: nesc-expressions
+
+  param-interface-call:
+    - match: (?={{identifier}}\s*\.{{identifier}}\s*\[)
+      push:
+        - meta_content_scope: meta.param-interface-call.new-nesc
+        - include: c99
+        - match: '{{identifier}}'
+          scope: variable.function.c
+        - match: '\['
+          scope: meta.group.c punctuation.section.group.begin.c
+          set:
+            - meta_content_scope: meta.param-interface-call.new-nesc meta.group.c
+            - match : \]
+              scope: meta.param-interface-call.new-nesc meta.group.c punctuation.section.group.end.c
+              pop: true
+            - include: nesc-expressions
+
+  nesc-function-call:
+    - match: (?={{identifier}}\s*\()
+      push:
+        - meta_content_scope: meta.function-call.c
+        - include: c99
+        - match: '{{identifier}}'
+          scope: variable.function.c
+        - match: '\('
+          scope: meta.group.c punctuation.section.group.begin.c
+          set:
+            - meta_content_scope: meta.function-call.c meta.group.c
+            - match : \)
+              scope: meta.function-call.c meta.group.c punctuation.section.group.end.c
+              pop: true
+            - include: nesc-expressions
+
+  keywords-parens:
+    - match: '\b(sizeof)\b\s*(\()'
+      captures:
+        1: keyword.operator.word.c
+        2: meta.group.c punctuation.section.group.begin.c
+      push:
+        - meta_content_scope: meta.group.c
+        - match: '\)'
+          scope: meta.group.c punctuation.section.group.end.c
+          pop: true
+        #- include: nesc-expressions
+
+  block:
+    - match: '\{'
+      scope: punctuation.section.block.begin.c
+      push:
+        - meta_scope: meta.block.c
+        - match: (?=^\s*#\s*(elif|else|endif)\b)
+          pop: true
+        - match: '\}'
+          scope: punctuation.section.block.end.c
+          pop: true
+        - include: statements
+
+  parens:
+    - match: \(
+      scope: punctuation.section.group.begin.c
+      push:
+        - meta_scope: meta.group.c
+        - match: \)
+          scope: punctuation.section.group.end.c
+          pop: true
+        - include: nesc-expressions
+
+  brackets:
+    - match: \[
+      scope: punctuation.section.brackets.begin.c
+      push:
+        - meta_scope: meta.brackets.c
+        - match: \]
+          scope: punctuation.section.brackets.end.c
+          pop: true
+        - include: nesc-expressions
+
+  preprocessor-statements:
+    - include: scope:source.c#preprocessor-statements
+
+  preprocessor-global:
+    - include: scope:source.c#preprocessor-line-continuation
+    - include: scope:source.c#preprocessor-line-ending
+    - include: scope:source.c#preprocessor-comments
+    - include: scope:source.c#preprocessor-statements
+    - include: scope:source.c#preprocessor-expressions
+
+  #global:
+    #- match: '(?=\btemplate\b)'
+    #  push:
+    #    - include: template
+    #    - match: (?=\S)
+    #      set: global-modifier
+    #- include: namespace
+    #- include: keywords-angle-brackets
+    #- match: '(?={{path_lookahead}}\s*<)'
+    #  push: global-modifier
+    #- include: early-expressions
+    # - match: ^\s*\b(extern)(?=\s+"C")
+    #   scope: storage.modifier.c++
+    #   push:
+    #     - include: strings
+    #     - match: '\{'
+    #       scope: punctuation.section.block.begin.c++
+    #       set:
+    #         - meta_scope: meta.extern-c.c++
+    #         - match: '^\s*(#\s*ifdef)\s*__cplusplus\s*'
+    #           scope: meta.preprocessor.c++
+    #           captures:
+    #             1: keyword.control.import.c++
+    #           set:
+    #             - match: '\}'
+    #               scope: punctuation.section.block.end.c++
+    #               pop: true
+    #         - match: '\}'
+    #           scope: punctuation.section.block.end.c++
+    #           pop: true
+    #         - include: preprocessor-global
+    #         - include: global
+    #     - match: (?=\S)
+    #       set: global-modifier
+    #- match: '^\s*(?=\w+)'
+    #  push: global-modifier
+    #- include: late-expressions
+
+    #- include: C.sublime-syntax
+
+#  double_quoted_string:
+#    - meta_scope: string.quoted.double.new-nesc
+#    - match: '\\.'
+#      scope: constant.character.escape.new-nesc
+#    - match: '"'
+#      scope: punctuation.definition.string.end.new-nesc
+#      pop: true
+
+#  line_comment:
+#    - meta_scope: comment.line.new-nesc
+#    - match: $
+#      pop: true
